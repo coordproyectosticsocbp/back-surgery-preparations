@@ -26,7 +26,7 @@ export class PreparationsController {
 
   @Sse('/all')
   sse(): Observable<MessageEvent> {
-    return interval(1000).pipe(
+    return interval(60*1000).pipe(
       switchMap(() => from(this.preparationsService.getAllPreparations())),
       map((data) => {
         return { data } as MessageEvent;
