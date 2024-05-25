@@ -33,4 +33,12 @@ export class PreparationsController {
       }),
     );
   }
+
+  // PATH METHODS //
+
+  @Patch('/releaseQuota/:id')
+  async releaseQuota( @Param ("id") id: string) {
+    return await this.preparationsService.releaseQuota(id);
+  }
+
 }

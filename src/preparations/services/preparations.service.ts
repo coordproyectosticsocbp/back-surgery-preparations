@@ -35,4 +35,30 @@ export class PreparationsService {
       return allPreparations;
     }
   }
+
+  // PATH FUNTIONS //
+
+  async releaseQuota(idQuota: string) {
+    const quotaToReleased = await this.preparationRepository.find({
+      where: {
+        id: idQuota,
+        status: SurgeryPreparationStatus.OCUPADO,
+        type: TypesOfSurgeryPreparations.TRANSFERENCIA_A_PISO || TypesOfSurgeryPreparations.SALIDA        
+      },
+    });
+
+    if (!quotaToReleased) {
+      return new HttpException(
+        `No hay cupos seleccionados`,
+        HttpStatus.NO_CONTENT,
+      );
+    } 
+
+    await  this.preparationRepository.update({id: idQuota},
+      {
+      status: SurgeryPreparationStatus.DISPONIBLE,
+      patient_document_type: null,
+      patient_document_number: null
+    })
+  }
 }
