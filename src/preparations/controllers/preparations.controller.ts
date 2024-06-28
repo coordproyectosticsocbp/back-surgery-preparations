@@ -1,16 +1,10 @@
 import {
   Controller,
-  Get,
-  Post,
-  Body,
   Patch,
   Param,
-  Delete,
   Sse,
 } from '@nestjs/common';
 import { PreparationsService } from '../services/preparations.service';
-import { CreatePreparationDto } from '../dto/create-preparation.dto';
-import { UpdatePreparationDto } from '../dto/update-preparation.dto';
 import { Observable, from, interval, map, switchMap } from 'rxjs';
 
 @Controller('preparations')

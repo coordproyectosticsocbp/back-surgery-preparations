@@ -2,10 +2,9 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CirugiaPreparations } from '../entities/preparation.entity';
-import { CreatePreparationDto } from '../dto/create-preparation.dto';
-import { UpdatePreparationDto } from '../dto/update-preparation.dto';
 import { SurgeryPreparationStatus } from '../enums/surgery_preparation_status.enum';
 import { TypesOfSurgeryPreparations } from '../enums/types_of_surgery_preparations.enum';
+import axios from 'axios';
 
 @Injectable()
 export class PreparationsService {
@@ -31,9 +30,53 @@ export class PreparationsService {
         `No hay registros en la base de datos`,
         HttpStatus.NO_CONTENT,
       );
-    } else {
-      return allPreparations;
     }
+
+    // Itera sobre las preparaciones y obtiene la propiedad `procedure` para cada una
+    const preparationsWithProcedure = await Promise.all(
+      allPreparations.map(async (preparation) => {
+        try {
+          const { patient_document_number, patient_document_type } =
+            preparation;
+
+            //console.log(patient_document_number + ' ---' + patient_document_type)
+
+          const url = process.env.API_URL;
+          const token = process.env.API_TOKEN;
+          //console.log(url + `/v1/cirugia/get/patient-procedures/${patient_document_number}/${patient_document_type}`)
+
+          const response = await axios.get(
+            url +
+              `/v1/cirugia/get/patient-procedures/${patient_document_number}/${patient_document_type}`,
+            {
+              headers: {
+                'X-Authorization': token,
+              },
+            },
+          );
+
+          //console.log(response.data?.data[0]?.procedures[0].procedureName || []);
+
+          // Asigna la propiedad `procedure` a la preparación actual
+          return {
+            ...preparation,
+            procedure: response.data?.data[0]?.procedures[0].procedureName || null,
+          };
+        } catch (error) {
+          console.error(
+            `Error fetching procedure for document ${preparation.patient_document_number}:`,
+            error,
+          );
+          return {
+            ...preparation,
+            procedure: null, // Manejo de errores, puede personalizar según sea necesario
+          };
+        }
+      }),
+    );
+
+    // Devuelve la lista de preparaciones con la nueva propiedad `procedure`
+    return preparationsWithProcedure;
   }
 
   // PATH FUNTIONS //
@@ -43,7 +86,9 @@ export class PreparationsService {
       where: {
         id: idQuota,
         status: SurgeryPreparationStatus.OCUPADO,
-        type: TypesOfSurgeryPreparations.TRANSFERENCIA_A_PISO || TypesOfSurgeryPreparations.SALIDA        
+        type:
+          TypesOfSurgeryPreparations.TRANSFERENCIA_A_PISO ||
+          TypesOfSurgeryPreparations.SALIDA,
       },
     });
 
@@ -52,13 +97,15 @@ export class PreparationsService {
         `No hay cupos seleccionados`,
         HttpStatus.NO_CONTENT,
       );
-    } 
+    }
 
-    await  this.preparationRepository.update({id: idQuota},
+    await this.preparationRepository.update(
+      { id: idQuota },
       {
-      status: SurgeryPreparationStatus.DISPONIBLE,
-      patient_document_type: null,
-      patient_document_number: null
-    })
+        status: SurgeryPreparationStatus.DISPONIBLE,
+        patient_document_type: null,
+        patient_document_number: null,
+      },
+    );
   }
 }
