@@ -33,7 +33,8 @@ export class PreparationsService {
     }
 
     // Itera sobre las preparaciones y obtiene la propiedad `procedure` para cada una
-    const preparationsWithProcedure = await Promise.all(
+    // Devuelve la lista de preparaciones con la nueva propiedad `procedure`
+    return await Promise.all(
       allPreparations.map(async (preparation) => {
         try {
           const { patient_document_number, patient_document_type } =
@@ -47,7 +48,7 @@ export class PreparationsService {
 
           const response = await axios.get(
             url +
-              `/v1/cirugia/get/patient-procedures/${patient_document_number}/${patient_document_type}`,
+              `/cirugia/patient-procedures/path/${patient_document_number}/${patient_document_type}`,
             {
               headers: {
                 'X-Authorization': token,
@@ -74,9 +75,6 @@ export class PreparationsService {
         }
       }),
     );
-
-    // Devuelve la lista de preparaciones con la nueva propiedad `procedure`
-    return preparationsWithProcedure;
   }
 
   // PATH FUNTIONS //
